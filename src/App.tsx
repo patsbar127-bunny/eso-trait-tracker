@@ -1,9 +1,5 @@
-declare global {
-  interface Window {
-    google: typeof google;
-    initMap?: () => void;
-  }
-}// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare global { interface Window { google: any; } }
 
 import { useState, useEffect, useCallback, useRef } from "react";
