@@ -1,4 +1,9 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap?: () => void;
+  }
+}// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare global { interface Window { google: any; } }
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -655,7 +660,7 @@ export default function App() {
                 <div style={{display:"flex",alignItems:"center",gap:7,flex:1,overflow:"hidden"}}>
                   <div style={{flexShrink:0}}>
                     {char.ownerPicture
-                      ? <img src={char.ownerPicture} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${owned?"#22c55e":"#eab308"}`}} alt="" onError={e=>(e.target as HTMLImageElement).style.display="none"}/>
+                      ? <img src={char.ownerPicture} style={{width:22,height:22,borderRadius:"50%",border:`1px solid ${owned?"#22c55e":"#eab308"}`}} alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       : <div style={{width:22,height:22,borderRadius:"50%",background:owned?"#22c55e":"#eab308",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#000"}}>{char.ownerDisplayName.charAt(0)}</div>
                     }
                   </div>
