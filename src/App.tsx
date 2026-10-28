@@ -1014,6 +1014,38 @@ export default function App() {
           )}
         </div>
       </div>
+	  
+	  {/* After the characters list, before the sidebar ends */}
+		<div style={{marginTop:"auto",borderTop:`1px solid ${border}`,padding:"10px 12px"}}>
+		  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+			<span style={{fontSize:11,fontWeight:700,color:muted,letterSpacing:1,textTransform:"uppercase"}}>Friends</span>
+			<button
+			  onClick={()=>setShowAddFriend(true)}
+			  title="Add a friend by Google ID"
+			  style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+			>+</button>
+		  </div>
+		  {friends.length===0?(
+			<div style={{fontSize:11,color:muted,padding:"4px 0"}}>No friends added yet.</div>
+		  ):(
+			friends.map(f=>(
+			  <div
+				key={f.id}
+				onClick={()=>setViewingFriend(f)}
+				style={{
+				  padding:"6px 8px",borderRadius:4,cursor:"pointer",
+				  background:viewingFriend?.id===f.id?(dark?"#1a2a3a":"#e8f0fe"):"transparent",
+				  color:viewingFriend?.id===f.id?"#60a5fa":text,
+				  fontSize:12,display:"flex",alignItems:"center",gap:6,
+				  transition:"background .15s"
+				}}
+			  >
+				<div style={{width:6,height:6,borderRadius:"50%",background:"#3b82f6",flexShrink:0}}/>
+				{f.name}
+			  </div>
+			))
+		  )}
+		</div>
 
       {showAddChar&&<AddCharModal identity={identity} onAdd={handleAddChar} onClose={()=>setShowAddChar(false)}/>}
       {showSignOut&&<SignOutConfirm identity={identity} onConfirm={handleSignOut} onCancel={()=>setShowSignOut(false)}/>}
