@@ -870,20 +870,24 @@ export default function App() {
         <div style={{width:210,minWidth:210,background:surface,borderRight:`1px solid ${border}`,display:"flex",flexDirection:"column",overflowY:"auto"}}>
           <div style={{padding:"10px 12px 6px",borderBottom:`1px solid ${border}`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-              <span style={{fontSize:11,fontWeight:700,color:muted,letterSpacing:1,textTransform:"uppercase"}}>Characters</span>
-              <button onClick={()=>setShowAddChar(true)} style={{background:"#c9a227",border:"none",color:"#000",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-            </div>
+			  <span style={{fontSize:11,fontWeight:700,color:muted,letterSpacing:1,textTransform:"uppercase"}}>Characters</span>
+			  <div style={{display:"flex",gap:4}}>
+				<button
+				  onClick={()=>setShowAddFriend(true)}
+				  title="Add a friend"
+				  style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+				>👥</button>
+				<button
+				  onClick={()=>setShowAddChar(true)}
+				  style={{background:"#c9a227",border:"none",color:"#000",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+				>+</button>
+			  </div>
+			</div>
             <button
               onClick={()=>setFilterOwned(v=>!v)}
               style={{width:"100%",background:filterOwned?(dark?"#1e1a0a":"#fff8e6"):(dark?"#1a1a1a":"#f5f5f5"),border:`1px solid ${filterOwned?"#c9a227":border}`,color:filterOwned?"#c9a227":muted,borderRadius:4,padding:"4px 8px",fontSize:10,cursor:"pointer",fontWeight:filterOwned?700:400}}
             >{filterOwned?"★ My Characters Only":"☆ All Characters"}</button>
-			<button
-			  onClick={()=>setShowAddFriend(true)}
-			  title="Add a friend"
-			  style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
-			>👥</button>
-          </div>
-
+			
           {visibleChars.length===0&&(
             <div style={{padding:"20px 12px",textAlign:"center",color:muted,fontSize:12}}>
               {filterOwned?"You have no characters yet.":"No characters yet."}<br/>
