@@ -579,11 +579,45 @@ export default function App() {
   },[characters]);
 
   useEffect(() => {
-    if (!identity) return;
-    loadFromWorker(identity).then(workerCharNames => {
-      console.log("Characters in worker:", workerCharNames);
-    });
-  }, [identity]);
+  if (!identity) return;
+  loadFromWorker(identity).then(async (workerCharNames: string[]) => {
+    if (!workerCharNames.length) return;
+    const local = loadDB();
+    let changed = false;
+    const merged = [...local];
+
+    for (const charName of workerCharNames) {
+      const alreadyLocal = local.find(
+        c => c.characterName === charName && c.ownerGoogleId === identity.googleId
+      );
+      if (!alreadyLocal) {
+        // Pull full data from worker
+        try {
+          const res = await fetch(
+            `${WORKER_URL}/load-character?ownerId=${identity.googleId}&characterName=${encodeURIComponent(charName)}`
+          );
+          const data = await res.json();
+          if (data.ok && data.content) {
+            merged.push({
+              ...data.content,
+              id: `${identity.googleId}_${Date.now()}_${Math.random()}`,
+              source: "cloud"
+            });
+            changed = true;
+          }
+        } catch (e) {
+          console.warn("Failed to load character from worker:", charName, e);
+        }
+      }
+    }
+
+    if (changed) {
+      setCharacters(merged);
+      saveDB(merged);
+      console.log("Synced from cloud:", workerCharNames);
+    }
+  });
+}, [identity]);
 
   const selectedChar = characters.find(c=>c.id===selectedId)||null;
   const isOwner = selectedChar && identity && selectedChar.ownerGoogleId===identity.googleId;
