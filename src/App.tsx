@@ -891,7 +891,7 @@ export default function App() {
               onClick={()=>setFilterOwned(v=>!v)}
               style={{width:"100%",background:filterOwned?(dark?"#1e1a0a":"#fff8e6"):(dark?"#1a1a1a":"#f5f5f5"),border:`1px solid ${filterOwned?"#c9a227":border}`,color:filterOwned?"#c9a227":muted,borderRadius:4,padding:"4px 8px",fontSize:10,cursor:"pointer",fontWeight:filterOwned?700:400}}
             >{filterOwned?"★ My Characters Only":"☆ All Characters"}</button>
-          </div> {/* closes padding:"10px 12px 6px" header div */
+          
 			
           {visibleChars.length===0&&(
             <div style={{padding:"20px 12px",textAlign:"center",color:muted,fontSize:12}}>
