@@ -922,7 +922,7 @@ export default function App() {
               </div>
             );
           })}
-		  {/* Friends Section */}
+		{/* Friends Section */}
 		{friends.length > 0 && (
 		  <div style={{borderTop:`1px solid #2a2a2a`,marginTop:8,paddingTop:8}}>
 			<div style={{padding:"6px 12px 4px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -947,7 +947,12 @@ export default function App() {
 				  {theirChars.map(char => {
 					const isSel = selectedId === char.id;
 					return (
-					  <div key={char.id} onClick={()=>setSelectedId(char.id)} style={{padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:7,background:isSel?"#0d1a2a":"transparent",borderLeft:isSel?"3px solid #60a5fa":"3px solid transparent",transition:"background 0.15s"}}>
+					 <div key={char.id}
+					  onClick={()=>{
+						console.log("Friend char clicked, id:", char.id, "char:", char);
+						setSelectedId(char.id);
+					  }}
+					  style={{padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:7,background:isSel?"#0d1a2a":"transparent",borderLeft:isSel?"3px solid #60a5fa":"3px solid transparent",transition:"background 0.15s"}}>
 						<div style={{width:22,height:22,borderRadius:"50%",background:"#1e3a5f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#60a5fa",flexShrink:0}}>
 						  {friend.nickname.charAt(0).toUpperCase()}
 						</div>
