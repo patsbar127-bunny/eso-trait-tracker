@@ -875,7 +875,7 @@ export default function App() {
 			  <button
 				onClick={()=>setShowAddFriend(true)}
 				title="Add friend"
-				style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+				style={{background:"#c9a227",border:"none",color:"#000",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
 			  >+F</button>
 			  <button
 				onClick={()=>setShowAddChar(true)}
