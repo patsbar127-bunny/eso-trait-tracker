@@ -135,12 +135,41 @@ const GAME_DATA = {
 
 const CRAFTS = Object.keys(GAME_DATA);
 const DB_KEY = "eso_trait_tracker_v2";
+const WORKER_URL = "https://eso-drive-worker.patsbar127.workers.dev"; 
 
 // ─── DB Helpers ───────────────────────────────────────────────────────────────
 function loadDB() {
   try { return JSON.parse(localStorage.getItem(DB_KEY) || "[]"); } catch { return []; }
 }
 function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+async function saveToWorker(identity, character) {
+  try {
+    await fetch(`${WORKER_URL}/save-character`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ownerId: identity.googleId,
+        ownerDisplayName: identity.displayName,
+        characterName: character.characterName,
+        traitData: character.traitData
+      })
+    });
+  } catch (e) {
+    console.warn("Worker save failed, using localStorage only:", e);
+  }
+}
+
+async function loadFromWorker(identity) {
+  try {
+    const res = await fetch(`${WORKER_URL}/list-characters?ownerId=${identity.googleId}`);
+    const data = await res.json();
+    return data.characters || [];
+  } catch (e) {
+    console.warn("Worker load failed, using localStorage only:", e);
+    return [];
+  }
+}
 
 function makeCharacter({ characterName, ownerGoogleId, ownerDisplayName, ownerEmail, ownerPicture }) {
   return {
@@ -549,6 +578,13 @@ export default function App() {
     if (selectedId && !characters.find(c=>c.id===selectedId)) setSelectedId(characters[0]?.id||null);
   },[characters]);
 
+  useEffect(() => {
+    if (!identity) return;
+    loadFromWorker(identity).then(workerCharNames => {
+      console.log("Characters in worker:", workerCharNames);
+    });
+  }, [identity]);
+
   const selectedChar = characters.find(c=>c.id===selectedId)||null;
   const isOwner = selectedChar && identity && selectedChar.ownerGoogleId===identity.googleId;
 
@@ -561,16 +597,21 @@ export default function App() {
     setSelectedId(null);
   };
 
-  const handleAddChar = (newChar)=>{
-    const next=[...characters,newChar];
-    setCharacters(next); saveDB(next);
-    setSelectedId(newChar.id); setShowAddChar(false);
+  const handleAddChar = (newChar) => {
+    const next = [...characters, newChar];
+    setCharacters(next);
+    saveDB(next);
+    saveToWorker(identity, newChar);  // ← add this line
+    setSelectedId(newChar.id);
+    setShowAddChar(false);
   };
 
   const handleUpdateChar = useCallback((updated)=>{
-    const next=characters.map(c=>c.id===updated.id?updated:c);
-    setCharacters(next); saveDB(next);
-  },[characters]);
+    const next = characters.map(c => c.id === updated.id ? updated : c);
+    setCharacters(next);
+    saveDB(next);
+    saveToWorker(identity, updated);  // ← add this line
+  }, [characters, identity]);
 
   const handleDeleteChar = (id)=>{
     const next=characters.filter(c=>c.id!==id);
