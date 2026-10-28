@@ -766,8 +766,11 @@ export default function App() {
 	  });
 	}, [identity, friends]);
 
-  const selectedChar = characters.find(c=>c.id===selectedId)||null;
+  const selectedChar = characters.find(c=>c.id===selectedId)
+    ?? friendChars.find(c=>c.id===selectedId)
+    ?? null;
   const isOwner = selectedChar && identity && selectedChar.ownerGoogleId===identity.googleId;
+  const isReadOnly = !!selectedChar && !isOwner;
 
   const handleSignIn = useCallback((id)=>{ setIdentity(id); },[]);
 
