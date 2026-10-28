@@ -702,6 +702,8 @@ export default function App() {
           if (data.ok && data.content) {
             merged.push({
               ...data.content,
+              ownerGoogleId: data.content.ownerGoogleId || identity.googleId,
+              ownerDisplayName: data.content.ownerDisplayName || identity.displayName,
               id: `${identity.googleId}_${Date.now()}_${Math.random()}`,
               source: "cloud"
             });
