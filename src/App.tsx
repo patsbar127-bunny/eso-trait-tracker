@@ -135,6 +135,7 @@ const GAME_DATA = {
 
 const CRAFTS = Object.keys(GAME_DATA);
 const DB_KEY = "eso_trait_tracker_v2";
+const FRIENDS_DB_KEY = "eso_friends_v1"; 
 const WORKER_URL = "https://eso-drive-worker.patsbar127.workers.dev"; 
 
 // ─── DB Helpers ───────────────────────────────────────────────────────────────
@@ -142,6 +143,13 @@ function loadDB() {
   try { return JSON.parse(localStorage.getItem(DB_KEY) || "[]"); } catch { return []; }
 }
 function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+function loadFriendsDB(): {googleId: string; nickname: string}[] {
+  try { return JSON.parse(localStorage.getItem(FRIENDS_DB_KEY) || "[]"); } catch { return []; }
+}
+function saveFriendsDB(friends: {googleId: string; nickname: string}[]) {
+  localStorage.setItem(FRIENDS_DB_KEY, JSON.stringify(friends));
+}
 
 async function saveToWorker(identity, character) {
   try {
@@ -168,6 +176,29 @@ async function loadFromWorker(identity) {
   } catch (e) {
     console.warn("Worker load failed, using localStorage only:", e);
     return [];
+  }
+}
+
+async function loadFriendsFromWorker(ownerId: string) {
+  try {
+    const res = await fetch(`${WORKER_URL}/get-friends?ownerId=${ownerId}`);
+    const data = await res.json() as { ok: boolean; friends: {googleId: string; nickname: string}[] };
+    return data.ok ? data.friends : [];
+  } catch (e) {
+    console.warn("Failed to load friends from worker:", e);
+    return [];
+  }
+}
+
+async function saveFriendsToWorker(ownerId: string, friends: {googleId: string; nickname: string}[]) {
+  try {
+    await fetch(`${WORKER_URL}/save-friends`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ownerId, friends })
+    });
+  } catch (e) {
+    console.warn("Failed to save friends to worker:", e);
   }
 }
 
@@ -561,6 +592,73 @@ function SignOutConfirm({ identity, onConfirm, onCancel }) {
   );
 }
 
+function AddFriendModal({ identity, onAdd, onClose }: {
+  identity: any;
+  onAdd: (friend: {googleId: string; nickname: string}) => void;
+  onClose: () => void;
+}) {
+  const [googleId, setGoogleId] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [error, setError] = useState("");
+
+  const handleAdd = () => {
+    const trimId = googleId.trim();
+    const trimNick = nickname.trim();
+    if (!trimId) { setError("Google ID is required."); return; }
+    if (trimId === identity.googleId) { setError("That's your own ID!"); return; }
+    if (!trimNick) { setError("Nickname is required."); return; }
+    onAdd({ googleId: trimId, nickname: trimNick });
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+      <div style={{background:"#131314",border:"1px solid #2a2a2a",borderRadius:10,padding:24,maxWidth:360,width:"90%"}}>
+        <div style={{fontSize:15,fontWeight:700,color:"#e8e8e8",marginBottom:4}}>Add a Friend</div>
+        <div style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>
+          Ask your friend to share their Google ID from the app.<br/>
+          Their characters will appear as read-only in your sidebar.
+        </div>
+
+        <div style={{marginBottom:8}}>
+          <div style={{fontSize:11,color:"#888",marginBottom:4,fontWeight:600}}>YOUR GOOGLE ID (share this)</div>
+          <div style={{
+            background:"#0d0d0e",border:"1px solid #333",borderRadius:6,
+            padding:"8px 10px",fontSize:11,color:"#c9a227",
+            fontFamily:"monospace",cursor:"text",userSelect:"all",wordBreak:"break-all"
+          }}>{identity.googleId}</div>
+        </div>
+
+        <div style={{height:1,background:"#2a2a2a",margin:"16px 0"}}/>
+
+        <div style={{marginBottom:8}}>
+          <div style={{fontSize:11,color:"#888",marginBottom:4,fontWeight:600}}>FRIEND'S GOOGLE ID</div>
+          <input
+            autoFocus value={googleId}
+            onChange={e=>{setGoogleId(e.target.value);setError("");}}
+            placeholder="Paste their Google ID…"
+            style={{width:"100%",background:"#1e1e1e",border:"1px solid #444",color:"#e8e8e8",borderRadius:6,padding:"8px 10px",fontSize:12,boxSizing:"border-box",outline:"none",fontFamily:"monospace"}}
+          />
+        </div>
+        <div style={{marginBottom:8}}>
+          <div style={{fontSize:11,color:"#888",marginBottom:4,fontWeight:600}}>NICKNAME</div>
+          <input
+            value={nickname}
+            onChange={e=>{setNickname(e.target.value);setError("");}}
+            onKeyDown={e=>{if(e.key==="Enter")handleAdd();if(e.key==="Escape")onClose();}}
+            placeholder="e.g. Pat, GuildMate1…"
+            style={{width:"100%",background:"#1e1e1e",border:"1px solid #444",color:"#e8e8e8",borderRadius:6,padding:"8px 10px",fontSize:12,boxSizing:"border-box",outline:"none"}}
+          />
+        </div>
+        {error && <div style={{color:"#ef4444",fontSize:12,marginBottom:8}}>{error}</div>}
+        <div style={{display:"flex",gap:8,marginTop:12}}>
+          <button onClick={handleAdd} style={{flex:1,background:"#1a3a1a",border:"1px solid #22c55e",color:"#22c55e",borderRadius:6,padding:"8px 0",fontSize:13,fontWeight:700,cursor:"pointer"}}>Add Friend</button>
+          <button onClick={onClose} style={{flex:1,background:"#2a2a2a",border:"1px solid #333",color:"#aaa",borderRadius:6,padding:"8px 0",fontSize:13,cursor:"pointer"}}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [identity,      setIdentity]      = useState(null);
@@ -572,7 +670,11 @@ export default function App() {
   const [showSignOut,   setShowSignOut]   = useState(false);
   const [filterOwned,   setFilterOwned]   = useState(false);
   const [dark,          setDark]          = useState(true);
-
+  const [friends,       setFriends]       = useState<{googleId: string; nickname: string}[]>(()=>loadFriendsDB());
+  const [friendChars,   setFriendChars]   = useState<any[]>([]);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [loadingFriends,setLoadingFriends]= useState(false);
+  
   useEffect(()=>{
     if (characters.length>0 && !selectedId) setSelectedId(characters[0].id);
     if (selectedId && !characters.find(c=>c.id===selectedId)) setSelectedId(characters[0]?.id||null);
@@ -619,6 +721,51 @@ export default function App() {
   });
 }, [identity]);
 
+	useEffect(() => {
+	  if (!identity) return;
+	  // Load friends list from KV on sign-in
+	  loadFriendsFromWorker(identity.googleId).then(kvFriends => {
+		if (kvFriends.length > 0) {
+		  setFriends(kvFriends);
+		  saveFriendsDB(kvFriends);
+		}
+	  });
+	}, [identity]);
+
+	useEffect(() => {
+	  if (!identity || friends.length === 0) { setFriendChars([]); return; }
+	  setLoadingFriends(true);
+	  Promise.all(
+		friends.map(async friend => {
+		  try {
+			const res = await fetch(`${WORKER_URL}/list-characters?ownerId=${friend.googleId}`);
+			const data = await res.json() as { ok: boolean; characters: string[] };
+			if (!data.ok || !data.characters?.length) return [];
+			const chars = await Promise.all(
+			  data.characters.map(async charName => {
+				try {
+				  const r = await fetch(`${WORKER_URL}/load-character?ownerId=${friend.googleId}&characterName=${encodeURIComponent(charName)}`);
+				  const d = await r.json() as { ok: boolean; content: any };
+				  if (!d.ok) return null;
+				  return {
+					...d.content,
+					id: `friend_${friend.googleId}_${charName}`,
+					ownerGoogleId: friend.googleId,
+					ownerDisplayName: friend.nickname,
+					source: "friend"
+				  };
+				} catch { return null; }
+			  })
+			);
+			return chars.filter(Boolean);
+		  } catch { return []; }
+		})
+	  ).then(results => {
+		setFriendChars(results.flat());
+		setLoadingFriends(false);
+	  });
+	}, [identity, friends]);
+
   const selectedChar = characters.find(c=>c.id===selectedId)||null;
   const isOwner = selectedChar && identity && selectedChar.ownerGoogleId===identity.googleId;
 
@@ -653,7 +800,23 @@ export default function App() {
     if(selectedId===id) setSelectedId(next[0]?.id||null);
   };
 
-  const visibleChars = filterOwned ? characters.filter(c=>c.ownerGoogleId===identity?.googleId) : characters;
+  const handleAddFriend = (friend: {googleId: string; nickname: string}) => {
+    const next = [...friends, friend];
+    setFriends(next);
+    saveFriendsDB(next);
+    saveFriendsToWorker(identity.googleId, next);
+    setShowAddFriend(false);
+  };
+
+  const handleRemoveFriend = (googleId: string) => {
+    const next = friends.filter(f => f.googleId !== googleId);
+    setFriends(next);
+    saveFriendsDB(next);
+    saveFriendsToWorker(identity.googleId, next);
+    setFriendChars(prev => prev.filter(c => c.ownerGoogleId !== googleId));
+  };
+
+  const visibleChars = filterOwned ? characters.filter(c => c.ownerGoogleId === identity?.googleId) : characters;
   const surface = dark?"#131314":"#ffffff";
   const border  = dark?"#2a2a2a":"#d0d0d0";
   const text    = dark?"#e8e8e8":"#111111";
@@ -714,6 +877,11 @@ export default function App() {
               onClick={()=>setFilterOwned(v=>!v)}
               style={{width:"100%",background:filterOwned?(dark?"#1e1a0a":"#fff8e6"):(dark?"#1a1a1a":"#f5f5f5"),border:`1px solid ${filterOwned?"#c9a227":border}`,color:filterOwned?"#c9a227":muted,borderRadius:4,padding:"4px 8px",fontSize:10,cursor:"pointer",fontWeight:filterOwned?700:400}}
             >{filterOwned?"★ My Characters Only":"☆ All Characters"}</button>
+			<button
+			  onClick={()=>setShowAddFriend(true)}
+			  title="Add a friend"
+			  style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+			>👥</button>
           </div>
 
           {visibleChars.length===0&&(
@@ -746,6 +914,47 @@ export default function App() {
               </div>
             );
           })}
+		  {/* Friends Section */}
+		{friends.length > 0 && (
+		  <div style={{borderTop:`1px solid #2a2a2a`,marginTop:8,paddingTop:8}}>
+			<div style={{padding:"6px 12px 4px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+			  <span style={{fontSize:11,fontWeight:700,color:"#888",letterSpacing:1,textTransform:"uppercase"}}>Friends</span>
+			  {loadingFriends && <span style={{fontSize:10,color:"#555"}}>loading…</span>}
+			</div>
+			{friends.map(friend => {
+			  const theirChars = friendChars.filter(c => c.ownerGoogleId === friend.googleId);
+			  return (
+				<div key={friend.googleId}>
+				  <div style={{padding:"4px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+					<span style={{fontSize:11,fontWeight:700,color:"#60a5fa"}}>{friend.nickname}</span>
+					<button
+					  onClick={()=>handleRemoveFriend(friend.googleId)}
+					  title="Remove friend"
+					  style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:11,padding:"0 2px"}}
+					>✕</button>
+				  </div>
+				  {theirChars.length === 0 && (
+					<div style={{padding:"4px 12px 8px",fontSize:11,color:"#555",fontStyle:"italic"}}>No characters found</div>
+				  )}
+				  {theirChars.map(char => {
+					const isSel = selectedId === char.id;
+					return (
+					  <div key={char.id} onClick={()=>setSelectedId(char.id)} style={{padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:7,background:isSel?"#0d1a2a":"transparent",borderLeft:isSel?"3px solid #60a5fa":"3px solid transparent",transition:"background 0.15s"}}>
+						<div style={{width:22,height:22,borderRadius:"50%",background:"#1e3a5f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#60a5fa",flexShrink:0}}>
+						  {friend.nickname.charAt(0).toUpperCase()}
+						</div>
+						<div style={{overflow:"hidden"}}>
+						  <div style={{fontSize:12,fontWeight:600,color:isSel?"#60a5fa":"#aaa",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{char.characterName}</div>
+						  <div style={{fontSize:10,color:"#555"}}>👁 Read-only</div>
+						</div>
+					  </div>
+					);
+				  })}
+				</div>
+			  );
+			})}
+		  </div>
+		)}
         </div>
 
         {/* Main Content */}
@@ -803,6 +1012,7 @@ export default function App() {
 
       {showAddChar&&<AddCharModal identity={identity} onAdd={handleAddChar} onClose={()=>setShowAddChar(false)}/>}
       {showSignOut&&<SignOutConfirm identity={identity} onConfirm={handleSignOut} onCancel={()=>setShowSignOut(false)}/>}
+	  {showAddFriend && <AddFriendModal identity={identity} onAdd={handleAddFriend} onClose={()=>setShowAddFriend(false)}/>} 
 
       {deleteConfirm&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}>
