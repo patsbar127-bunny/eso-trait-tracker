@@ -872,15 +872,16 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
 			  <span style={{fontSize:11,fontWeight:700,color:muted,letterSpacing:1,textTransform:"uppercase"}}>Characters</span>
 			  <div style={{display:"flex",gap:4}}>
-				<button
-				  onClick={()=>setShowAddFriend(true)}
-				  title="Add a friend"
-				  style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
-				>👥</button>
-				<button
-				  onClick={()=>setShowAddChar(true)}
-				  style={{background:"#c9a227",border:"none",color:"#000",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
-				>+</button>
+			  <button
+				onClick={()=>setShowAddFriend(true)}
+				title="Add friend"
+				style={{background:"#1e3a5f",border:"1px solid #3b82f6",color:"#60a5fa",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+			  >+F</button>
+			  <button
+				onClick={()=>setShowAddChar(true)}
+				style={{background:"#c9a227",border:"none",color:"#000",borderRadius:4,width:22,height:22,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}
+			  >+</button>
+			</div>
 			  </div>
 			</div>
             <button
